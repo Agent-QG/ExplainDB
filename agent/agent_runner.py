@@ -19,7 +19,6 @@ def ask_question(agent, question):
             "tool_output": getattr(message, "tool_output", None),
         })
 
-        # 滚动记录倒数两步
         second_last_message = last_message
         last_message = message
 
