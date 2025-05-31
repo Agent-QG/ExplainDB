@@ -230,6 +230,3 @@ DATABASES = {
 
 ExplainDB processes natural language queries against structured databases using LLMs and visualization tools. It relies on session memory, in-memory DataFrames, and dynamic generation of charts and explanations for each user question.
 
-````
-
-````
