@@ -3,9 +3,14 @@ import json
 import re
 import time
 from decimal import Decimal
+from typing import Any
 
 import pandas as pd
-from lida import Manager, TextGenerationConfig, llm
+#from lida import Manager, TextGenerationConfig, llm
+from lida.components import Manager
+from llmx import llm, TextGenerator
+from lida.datamodel import Goal, Summary, TextGenerationConfig, Persona
+
 
 from agent.agent_builder import build_agent
 from agent.agent_runner import ask_question
@@ -14,7 +19,7 @@ from agent.call_gpt import get_gpt_response
 text_gen = llm("openai")  # for openai
 
 lida = Manager(text_gen=llm("openai", api_key=None))  # !! api key
-textgen_config = TextGenerationConfig(n=1, temperature=0.15, model="gpt-4.1", use_cache=True)
+textgen_config = TextGenerationConfig(n=1, temperature=0.5, model="gpt-4.1", use_cache=True)
 
 
 def process_query(
@@ -36,6 +41,22 @@ def process_query(
 
     # Get agent outputs: trace log, final natural language answer, and raw SQL query result
     trace_log, final_answer, search_result = ask_question(agent, question)
+
+    print(final_answer)
+
+    if not search_result:
+        print("⚠️ No results found for the query.")
+        return {
+            "final_answer": "No data matched your query. Please try asking a different question.",
+            "json_result": [],
+            "goals": [],
+            "chart_code_list": [],
+            "chart_base64_list": [],
+            "explanation_list": [],
+            "trace_log": trace_log,
+            "df": pd.DataFrame()
+        }
+
 
     print("🔍 Raw search_result content:")
     print(search_result)
@@ -132,22 +153,30 @@ def process_query(
             print(f"🚀 Generating chart for goal {idx + 1}")
             print(goals[idx])
 
+            charts = []
             for i in range(1, 101):
                 charts = lida.visualize(summary=summary, goal=goal, library="matplotlib")
                 if charts:
                     break
 
-            print(charts)
-            explanation = lida.explain(code=charts[0].code)
+            if charts:
+                chart = charts[0]
+                explanation = lida.explain(code=chart.code)
 
-            for chart in charts:
                 chart_code_list.append(chart.code)
                 chart_base64_list.append(chart.raster)
                 explanation_list.append(explanation)
+            else:
+                print(f"⚠️ No chart generated for goal {idx + 1}, inserting empty.")
+                chart_code_list.append("")
+                chart_base64_list.append("")
+                explanation_list.append("")
 
         except Exception as e:
             print(f"❌ Error during visualization for goal {idx + 1}: {e}")
-
+            chart_code_list.append("")
+            chart_base64_list.append("")
+            explanation_list.append("")
     # ✅ Return a dictionary with everything you need
     return {
         "final_answer": final_answer,  # Natural language answer to the original question
@@ -184,3 +213,26 @@ def show_charts():
 
 This way, your Flask app renders visual insights directly in HTML.
 """
+
+def format_goal(goal: Any) -> str:
+    if isinstance(goal, str):
+        return goal
+    elif hasattr(goal, "question"):
+        return str(goal.question)
+    return str(goal)
+
+
+def format_explanation(expl: Any) -> str:
+    if isinstance(expl, str):
+        return expl
+    try:
+        # explanation is likely a list of dict sections
+        lines = []
+        for block in expl[0]:  # take the first explanation (explanation is [[{...}, {...}]]])
+            section = block.get('section', '')
+            explanation = block.get('explanation', '')
+            lines.append(f"[{section}] {explanation}")
+        return "\n".join(lines)
+    except Exception:
+        return str(expl)
+

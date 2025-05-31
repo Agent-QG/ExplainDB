@@ -12,7 +12,7 @@ FROM (
     FROM Customer c
     JOIN Invoice i ON c.CustomerId = i.CustomerId
     GROUP BY c.CustomerId
-    HAVING 
+    HAVING  
         SUM(CASE WHEN strftime('%Y', i.InvoiceDate) = '2010' THEN i.Total ELSE 0 END) > 0
         AND
         SUM(CASE WHEN strftime('%Y', i.InvoiceDate) = '2011' THEN i.Total ELSE 0 END) >= 
