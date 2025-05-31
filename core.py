@@ -1,18 +1,20 @@
-import ast
+import datetime
 import json
 import re
 import time
+from decimal import Decimal
 
-import matplotlib.pyplot as plt
 import pandas as pd
-from lida import Manager
+from lida import Manager, TextGenerationConfig, llm
 
 from agent.agent_builder import build_agent
 from agent.agent_runner import ask_question
 from agent.call_gpt import get_gpt_response
 
-# Initialize LIDA visualization manager
-lida = Manager()
+text_gen = llm("openai")  # for openai
+
+lida = Manager(text_gen=llm("openai", api_key=None))  # !! api key
+textgen_config = TextGenerationConfig(n=1, temperature=0.15, model="gpt-4.1", use_cache=True)
 
 
 def process_query(
@@ -35,9 +37,20 @@ def process_query(
     # Get agent outputs: trace log, final natural language answer, and raw SQL query result
     trace_log, final_answer, search_result = ask_question(agent, question)
 
+    print("🔍 Raw search_result content:")
+    print(search_result)
+
+    eval_globals = {
+        "__builtins__": {},
+        "Decimal": Decimal,
+        "datetime": datetime,
+        "timezone": datetime.timezone,
+        "timedelta": datetime.timedelta,
+    }
     # Parse the raw search result (assumed to be stringified list of dicts)
+    # Safe parsing of the SQL result (which may contain datetime, etc.)
     try:
-        search_result = ast.literal_eval(search_result)
+        search_result = eval(search_result, eval_globals)
     except Exception as e:
         print("⚠️ Failed to parse search_result:", e)
         print("Raw content:", search_result)
@@ -94,33 +107,37 @@ def process_query(
     # Load back into DataFrame
     data_list = json.loads(json_str_output)
     df = pd.DataFrame(data_list)
+    # Convert any datetime fields from raw `datetime` objects
+    for col in df.columns:
+        if df[col].dtype == 'object' and df[col].apply(lambda x: isinstance(x, datetime.datetime)).any():
+            df[col] = pd.to_datetime(df[col])
+    print("df got!!!!!!!")
+    print(df)
 
     # Summarize data using LIDA
-    lida = Manager()
-    summary = lida.summarize(df)
-
+    summary = lida.summarize(df, textgen_config=textgen_config)
+    print("summary got!!!!!!!")
     # Generate goals (data questions) automatically
-    goals = lida.goals(summary, n=5)
 
-    # Generate initial chart based on original query
+    goals = lida.goals(summary, n=5)
+    goals.insert(0, question)
+
+    print("goals got!!!!!!!")
+    # Generate initial chart based   on original query
     chart_code_list = []
     chart_base64_list = []
     explanation_list = []
-
-    charts = lida.visualize(summary=summary, goal=question, library="matplotlib")
-    print(charts)
-    explanation = lida.explain(code=charts[0].code)
-
-    for chart in charts:
-        chart_code_list.append(chart.code)  # Python code that renders chart
-        chart_base64_list.append(chart.raster)  # Base64-encoded PNG image
-        explanation_list.append(explanation)  # Textual explanation of chart
-
-    # Try generating charts for the other goals as well
     for idx, goal in enumerate(goals[:5]):
         try:
             print(f"🚀 Generating chart for goal {idx + 1}")
-            charts = lida.visualize(summary=summary, goal=goal, library="matplotlib")
+            print(goals[idx])
+
+            for i in range(1, 101):
+                charts = lida.visualize(summary=summary, goal=goal, library="matplotlib")
+                if charts:
+                    break
+
+            print(charts)
             explanation = lida.explain(code=charts[0].code)
 
             for chart in charts:
@@ -131,17 +148,17 @@ def process_query(
         except Exception as e:
             print(f"❌ Error during visualization for goal {idx + 1}: {e}")
 
-        # ✅ Return a dictionary with everything you need
-        return {
-            "final_answer": final_answer,  # Natural language answer to the original question
-            "json_result": data_list,  # Structured JSON result of SQL query
-            "goals": goals,  # Generated goals (alternative insights)
-            "chart_code_list": chart_code_list,  # List of matplotlib code strings
-            "chart_base64_list": chart_base64_list,  # List of base64 PNGs for direct HTML display
-            "explanation_list": explanation_list,  # Explanation text for each chart
-            "trace_log": trace_log,  # Reasoning + SQL generation trace
-            "df": df  # Cleaned pandas DataFrame for further use
-        }
+    # ✅ Return a dictionary with everything you need
+    return {
+        "final_answer": final_answer,  # Natural language answer to the original question
+        "json_result": data_list,  # Structured JSON result of SQL query
+        "goals": goals,  # Generated goals (alternative insights)
+        "chart_code_list": chart_code_list,  # List of matplotlib code strings
+        "chart_base64_list": chart_base64_list,  # List of base64 PNGs for direct HTML display
+        "explanation_list": explanation_list,  # Explanation text for each chart
+        "trace_log": trace_log,  # Reasoning + SQL generation trace
+        "df": df  # Cleaned pandas DataFrame for further use
+    }
 
 
 """
