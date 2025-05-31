@@ -6,21 +6,18 @@ from decimal import Decimal
 from typing import Any
 
 import pandas as pd
-#from lida import Manager, TextGenerationConfig, llm
-from lida.components import Manager
-from llmx import llm, TextGenerator
-from lida.datamodel import Goal, Summary, TextGenerationConfig, Persona
-
+from llmx import llm
 
 from agent.agent_builder import build_agent
 from agent.agent_runner import ask_question
 from agent.call_gpt import get_gpt_response
+from lida.components import Manager
+from lida.datamodel import TextGenerationConfig
 
+# Initialize LLM (OpenAI) and LIDA Manager
 text_gen = llm("openai")  # for openai
-
-lida = Manager(text_gen=llm("openai", api_key=None))  # !! api key
+lida = Manager(text_gen=llm("openai", api_key=None))  # API key can be added
 textgen_config = TextGenerationConfig(n=1, temperature=0.5, model="gpt-4.1", use_cache=True)
-
 
 def process_query(
         db_uri="sqlite:///Chinook.db",
@@ -28,24 +25,19 @@ def process_query(
         question="Which 10 genres are the most popular by sales volume, and what is the average price per track in each?"
 ):
     """
-    Main function that:
-    1. Sends a natural language query to the LangChain agent.
-    2. Parses the SQL result into a DataFrame.
-    3. Sends the JSON result and reasoning trace to GPT to get proper headers.
-    4. Uses LIDA to summarize, generate goals, and visualize the data.
-    5. Returns all useful intermediate and final results.
-
-    This function can be called from a Flask route to return analysis results and chart base64 images for rendering.
+    Main pipeline for:
+    1. Querying the database via LangChain agent.
+    2. Cleaning/parsing result into DataFrame.
+    3. Using GPT to reformat headers.
+    4. Generating summary, insights, visualizations, and explanations via LIDA.
     """
+
     agent = build_agent(db_uri, llm_name)
-
-    # Get agent outputs: trace log, final natural language answer, and raw SQL query result
     trace_log, final_answer, search_result = ask_question(agent, question)
-
     print(final_answer)
 
+    # Handle empty query result
     if not search_result:
-        print("⚠️ No results found for the query.")
         return {
             "final_answer": "No data matched your query. Please try asking a different question.",
             "json_result": [],
@@ -57,10 +49,7 @@ def process_query(
             "df": pd.DataFrame()
         }
 
-
-    print("🔍 Raw search_result content:")
-    print(search_result)
-
+    # Safely evaluate the search result into Python object
     eval_globals = {
         "__builtins__": {},
         "Decimal": Decimal,
@@ -68,43 +57,36 @@ def process_query(
         "timezone": datetime.timezone,
         "timedelta": datetime.timedelta,
     }
-    # Parse the raw search result (assumed to be stringified list of dicts)
-    # Safe parsing of the SQL result (which may contain datetime, etc.)
     try:
         search_result = eval(search_result, eval_globals)
     except Exception as e:
         print("⚠️ Failed to parse search_result:", e)
-        print("Raw content:", search_result)
         exit(1)
 
-
-    # Convert result to DataFrame and save to JSON for debugging or GPT use
     df = pd.DataFrame(search_result)
 
-    # 在 summarize 前先清洗 NaN 标准差列（避免 LIDA 内部报错）
+    # Clean NaN std columns (avoid LIDA error)
     for col in df.columns:
         if pd.api.types.is_numeric_dtype(df[col]):
-            if df[col].std() != df[col].std():  # NaN 检查
+            if df[col].std() != df[col].std():  # NaN std check
                 df[col] = df[col].fillna(0)
 
+    # Save raw JSON
     json_str = df.to_json(orient="records", force_ascii=False, indent=2)
     with open("json_output/output.json", "w", encoding="utf-8") as f:
         f.write(json_str)
 
-    # Prepare GPT prompt and input with the JSON data and query reasoning
+    # Prepare GPT input for header refinement
     prompt = "You are a data analyst and json master. Please read the following JSON file and the user query process, and then complete the table headers for the JSON. Only output the new json content!"
     gpt_input = "This is json content:\n" + json_str + "\n//// This is user query process:\n" + "\n".join(
         map(str, trace_log))
 
-    def get_clean_json_from_gpt(prompt, gpt_input, max_retries=100):
-        """
-        Calls GPT with retry logic until a valid JSON list is extracted.
-        """
+    # Function: get cleaned JSON via GPT, retrying if needed
+    def get_clean_json_from_gpt(prompt, gpt_input, max_retries=5):
         for attempt in range(1, max_retries + 1):
             print(f"🔁 Attempt {attempt}...")
             json_response = get_gpt_response(prompt, gpt_input)
             clean_json_data = extract_json_array(json_response)
-
             if clean_json_data is not None:
                 print("✅ Valid JSON extracted.")
                 json_str_output = json.dumps(clean_json_data, indent=2, ensure_ascii=False)
@@ -113,15 +95,13 @@ def process_query(
                 return json_str_output
 
             print("❌ Invalid JSON format. Retrying...\n")
+            print(json_response)
             time.sleep(0.5)
-
         print("❌ Failed to extract valid JSON after max retries.")
         return None
 
+    # Function: extract list of dicts from GPT output
     def extract_json_array(response_text):
-        """
-        Regex + JSON parse to extract a list of dicts from raw GPT output.
-        """
         match = re.search(r'\[\s*{.*?}\s*]', response_text, re.DOTALL)
         if match:
             try:
@@ -130,98 +110,104 @@ def process_query(
                 return None
         return None
 
-    # Send to GPT to get cleaned headers
+    # Get cleaned JSON output
     json_str_output = get_clean_json_from_gpt(prompt, gpt_input)
-
-    # Load back into DataFrame
     data_list = json.loads(json_str_output)
     df = pd.DataFrame(data_list)
-    # Convert any datetime fields from raw `datetime` objects
+
+    # Parse datetime objects
     for col in df.columns:
         if df[col].dtype == 'object' and df[col].apply(lambda x: isinstance(x, datetime.datetime)).any():
             df[col] = pd.to_datetime(df[col])
-    print("df got!!!!!!!")
+
     print(df)
 
-    # Summarize data using LIDA
+    # Use LIDA to summarize the data
     summary = lida.summarize(df, textgen_config=textgen_config)
     print("summary got!!!!!!!")
-    # Generate goals (data questions) automatically
 
-    goals = lida.goals(summary, n=5)
+    # Generate data exploration goals (questions)
+    goals = lida.goals(summary, n=2)
     goals.insert(0, question)
-
     print("goals got!!!!!!!")
-    # Generate initial chart based   on original query
+
+    # Generate visualizations and explanations for each goal
     chart_code_list = []
     chart_base64_list = []
     explanation_list = []
-    for idx, goal in enumerate(goals[:5]):
-        try:
-            print(f"🚀 Generating chart for goal {idx + 1}")
-            print(goals[idx])
 
-            charts = []
-            for i in range(1, 101):
+    for idx, goal in enumerate(goals):
+        print(f"🚀 Generating chart for goal {idx + 1}")
+        success = False
+        for attempt in range(10):
+            try:
                 charts = lida.visualize(summary=summary, goal=goal, library="matplotlib")
                 if charts:
+                    chart = charts[0]
+                    explanation_raw = lida.explain(code=chart.code)
+                    explanation = " ".join(
+                        item["explanation"]
+                        for sublist in explanation_raw
+                        for item in sublist
+                        if isinstance(item, dict) and "explanation" in item
+                    )
+
+                    # Use GPT to rewrite explanation for end-users
+                    prompt = (
+                        "You are a data analyst and showing a figure to the user. "
+                        "Read the following explanation generated by Lida about a chart. "
+                        "Rewrite it into clear and fluent English that an average viewer of the chart can easily understand. "
+                        "The rewritten explanation should help someone interpret the chart just by looking at it, without referring to any code. "
+                        "It should be one coherent paragraph — not a list or bullet points. "
+                        "Make the content informative but concise, avoiding unnecessary repetition. "
+                        "Start the explanation with 'Explanation:' and end with 'Explanation end.'."
+                    )
+                    for i in range(10):
+                        try:
+                            response = get_gpt_response(prompt, explanation)
+                            match = re.search(r'Explanation:.*?Explanation end\.', response, re.DOTALL)
+                            if match:
+                                extracted = match.group(0).strip()
+                                print(f"✅ Explanation generated on attempt {i + 1}:\n")
+                                break
+                            else:
+                                print(f"⚠️ Attempt {i + 1} failed to match Explanation. Retrying...")
+                        except Exception as e:
+                            print(f"⚠️ Attempt {i + 1} failed with error: {e}")
+                        time.sleep(0.5)
+                    else:
+                        print("❌ All attempts failed to extract a valid Explanation.")
+
+                    get_gpt_response(prompt, explanation)
+
+                    chart_code_list.append(chart.code)
+                    chart_base64_list.append(chart.raster)
+                    explanation_list.append(explanation)
+                    success = True
                     break
+            except Exception as e:
+                print(f"⚠️ Attempt {attempt + 1} failed with error: {e}")
+                time.sleep(0.2)
 
-            if charts:
-                chart = charts[0]
-                explanation = lida.explain(code=chart.code)
-
-                chart_code_list.append(chart.code)
-                chart_base64_list.append(chart.raster)
-                explanation_list.append(explanation)
-            else:
-                print(f"⚠️ No chart generated for goal {idx + 1}, inserting empty.")
-                chart_code_list.append("")
-                chart_base64_list.append("")
-                explanation_list.append("")
-
-        except Exception as e:
-            print(f"❌ Error during visualization for goal {idx + 1}: {e}")
+        if not success:
+            print(f"⚠️ Failed to generate chart for goal {idx + 1}, inserting empty.")
             chart_code_list.append("")
             chart_base64_list.append("")
             explanation_list.append("")
-    # ✅ Return a dictionary with everything you need
+
+    # Return all results for use in Flask or elsewhere
     return {
-        "final_answer": final_answer,  # Natural language answer to the original question
-        "json_result": data_list,  # Structured JSON result of SQL query
-        "goals": goals,  # Generated goals (alternative insights)
-        "chart_code_list": chart_code_list,  # List of matplotlib code strings
-        "chart_base64_list": chart_base64_list,  # List of base64 PNGs for direct HTML display
-        "explanation_list": explanation_list,  # Explanation text for each chart
-        "trace_log": trace_log,  # Reasoning + SQL generation trace
-        "df": df  # Cleaned pandas DataFrame for further use
+        "final_answer": final_answer,
+        "json_result": data_list,
+        "goals": goals,
+        "chart_code_list": chart_code_list,
+        "chart_base64_list": chart_base64_list,
+        "explanation_list": explanation_list,
+        "trace_log": trace_log,
+        "df": df
     }
 
-
-"""
-📝 How to use this function in a Flask app:
-
-from flask import Flask, render_template
-
-@app.route("/chart")
-def show_charts():
-    result = process_query(question="Which customers increased their total spending by at least 10% in 2010 compared to 2009")
-
-    return render_template("chart.html", 
-        final_answer=result["final_answer"],
-        charts=result["chart_base64_list"],
-        explanations=result["explanation_list"]
-    )
-
-🖼️ In your `chart.html`:
-{% for chart, explanation in zip(charts, explanations) %}
-    <img src="data:image/png;base64,{{ chart }}" alt="chart">
-    <p>{{ explanation }}</p>
-{% endfor %}
-
-This way, your Flask app renders visual insights directly in HTML.
-"""
-
+# Utility to format LIDA goal object
 def format_goal(goal: Any) -> str:
     if isinstance(goal, str):
         return goal
@@ -229,18 +215,16 @@ def format_goal(goal: Any) -> str:
         return str(goal.question)
     return str(goal)
 
-
+# Utility to format LIDA explanation object
 def format_explanation(expl: Any) -> str:
     if isinstance(expl, str):
         return expl
     try:
-        # explanation is likely a list of dict sections
         lines = []
-        for block in expl[0]:  # take the first explanation (explanation is [[{...}, {...}]]])
+        for block in expl[0]:
             section = block.get('section', '')
             explanation = block.get('explanation', '')
             lines.append(f"[{section}] {explanation}")
         return "\n".join(lines)
     except Exception:
         return str(expl)
-

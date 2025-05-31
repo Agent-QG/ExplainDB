@@ -27,7 +27,7 @@ def build_agent(db_uri, llm_name="openai:gpt-4.1", top_k=25):
     database.
 
     To start you should ALWAYS look at the tables in the database to see what you
-    can query. Do NOT skip this step.
+    can query. Do NOT skip this step. Do Not Use Unix Timestamp.
 
     Then you should query the schema of the most relevant tables.
     

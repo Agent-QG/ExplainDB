@@ -1,25 +1,348 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Chat with Data Analyst</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8" />
+  <title>ExplainDB - Data Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f4f6fa;
+      color: #2c3e50;
+    }
+
+    .container {
+      display: flex;
+      max-width: 1200px;
+      margin: 40px auto;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    .sidebar {
+      width: 280px;
+      background-color: #f9fbfd;
+      border-right: 1px solid #e0e6ed;
+      padding: 24px;
+    }
+
+    .sidebar h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #34495e;
+      margin-bottom: 16px;
+    }
+
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #e3ecf6;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .sidebar button:hover {
+      background-color: #d3e3f3;
+    }
+
+    .history-item {
+      padding: 10px 14px;
+      border-radius: 6px;
+      background-color: #fff;
+      border: 1px solid #e1eaf0;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .history-item:hover {
+      background-color: #eef4fb;
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chat-box {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .message {
+      margin-bottom: 18px;
+      max-width: 80%;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background-color: #e3f2fd;
+      margin-left: auto;
+      border-radius: 12px 12px 0 12px;
+      border: 1px solid #bbdefb;
+    }
+
+    .bot {
+      background-color: #ecf4ef;
+      margin-right: auto;
+      border-radius: 12px 12px 12px 0;
+      border: 1px solid #c8e6c9;
+    }
+
+    #controls {
+      display: flex;
+      gap: 12px;
+      padding: 18px;
+      border-top: 1px solid #e2e6ec;
+      background-color: #f7f9fc;
+    }
+
+    #db-select, #user-input, button {
+      font-size: 1rem;
+      padding: 10px;
+      border: 1px solid #d1d9e6;
+      border-radius: 6px;
+    }
+
+    #db-select {
+      min-width: 160px;
+      background-color: #ffffff;
+    }
+
+    #user-input {
+      flex: 1;
+      background-color: #ffffff;
+    }
+
+    button {
+      background: linear-gradient(to right, #3f87f5, #357ae8);
+      color: white;
+      font-weight: 500;
+      border: none;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #346edb, #2f65d3);
+    }
+
+    img {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+      border: 1px solid #dbe5ec;
+    }
+
+    .loading {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #3498db;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    pre {
+      background-color: #f0f4f8;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
 </head>
 <body>
-    <div id="chat-container">
-        <div id="chat-box"></div>
+  <div class="container">
+    <div class="sidebar">
+      <h1 class="logo">🧠 ExplainDB</h1>
 
-        <div id="controls">
-            <select id="db-select">
-                {% for db in databases %}
-                    <option value="{{ db }}">{{ db }}</option>
-                {% endfor %}
-            </select>
-            <input type="text" id="user-input" placeholder="Type your question..." />
-            <button onclick="sendMessage()">Send</button>
-        </div>
+      <h2>History</h2>
+      <button onclick="startNewChat()">+ New Chat</button>
+      <button onclick="clearAllHistory()">🗑️ Clear All</button>
+      <div id="history">
+        {% for id, item in history.items() %}
+          <div class="history-item" onclick="loadChatById('{{ id }}')">
+            {{ item.title }}
+          </div>
+        {% endfor %}
+      </div>
     </div>
 
-    <script src="{{ url_for('static', filename='chat.js') }}"></script>
+    <div class="main">
+      <div id="chat-box">
+        <div class="message bot">
+          Welcome! Ask something about your database.
+        </div>
+      </div>
+      <div id="controls">
+        <select id="db-select">
+          {% for db in databases %}
+            <option value="{{ db }}">{{ db }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" id="user-input" placeholder="Type your question..." />
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentHistoryId = null;
+    const historyData = {{ history | tojson }};
+
+    function sendMessage() {
+      const input = document.getElementById("user-input");
+      const question = input.value;
+      const db = document.getElementById("db-select").value;
+      if (!question.trim()) return;
+
+      appendMessage("user", question);
+      input.value = "";
+
+      const loadingDiv = document.createElement("div");
+      loadingDiv.className = "message bot";
+      loadingDiv.innerHTML = '<div class="loading"></div><span>Processing...</span>';
+      document.getElementById("chat-box").appendChild(loadingDiv);
+      scrollToBottom();
+
+      fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question, database: db, history_id: currentHistoryId })
+      })
+      .then(response => response.json())
+.then(data => {
+  loadingDiv.remove();
+  currentHistoryId = data.history_id;
+  appendMessage("bot", data.final_answer);
+
+  if (data.main_chart && data.main_explanation) {
+    appendImage(data.main_chart);
+    appendMessage("bot", `<strong>Explanation:</strong> ${data.main_explanation}`);
+  }
+
+  if (data.recommendations.length > 0) {
+    appendMessage("bot", "<strong>You may be interested in:</strong>");
+    data.recommendations.forEach(item => {
+      appendMessage("bot", `<strong>Recommended Question:</strong> ${item.goal}`);
+      appendImage(item.chart);
+      appendMessage("bot", `<strong>Explanation:</strong> ${item.explanation}`);
+    });
+  }
+
+  // ✅ ✅ ✅ 动态更新 sidebar 中的 history 项
+if (!(data.history_id in historyData)) {
+  const historyDiv = document.getElementById("history");
+  const newItem = document.createElement("div");
+  newItem.className = "history-item";
+  newItem.textContent = question.length > 40 ? question.slice(0, 40) + "..." : question;
+  newItem.onclick = () => loadChatById(data.history_id);
+  historyDiv.appendChild(newItem);
+
+  historyData[data.history_id] = {
+    title: question,
+    entries: [{
+      question: question,
+      final_answer: data.final_answer,
+      main_chart: data.main_chart,
+      main_explanation: data.main_explanation,
+      recommendations: data.recommendations
+    }]
+  };
+}
+})
+      .catch(error => {
+        loadingDiv.remove();
+        appendMessage("bot", `Sorry, an error occurred: ${error.message}`);
+      });
+    }
+
+    function appendMessage(sender, text) {
+      const box = document.getElementById("chat-box");
+      const msg = document.createElement("div");
+      msg.className = "message " + sender;
+
+      if (sender === "bot" && text.includes('\n')) {
+        const pre = document.createElement("pre");
+        pre.textContent = text;
+        msg.appendChild(pre);
+      } else {
+        msg.innerHTML = text;
+      }
+
+      box.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function appendImage(base64) {
+      const box = document.getElementById("chat-box");
+      const img = document.createElement("img");
+      img.src = "data:image/png;base64," + base64;
+      box.appendChild(img);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      const box = document.getElementById("chat-box");
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function startNewChat() {
+      currentHistoryId = null;
+      document.getElementById("chat-box").innerHTML = `
+        <div class="message bot">
+          New chat started. Ask something about your database.
+        </div>`;
+    }
+
+    function clearAllHistory() {
+      fetch("/clear_history", { method: "POST" }).then(() => location.reload());
+    }
+
+    function loadChatById(id) {
+      const data = historyData[id];
+      if (!data) return;
+
+      currentHistoryId = id;
+      document.getElementById("chat-box").innerHTML = "";
+
+      data.entries.forEach(item => {
+        appendMessage("user", item.question);
+        appendMessage("bot", item.final_answer);
+        if (item.main_chart) appendImage(item.main_chart);
+        if (item.main_explanation) appendMessage("bot", `<strong>Explanation:</strong> ${item.main_explanation}`);
+        item.recommendations.forEach(rec => {
+          appendMessage("bot", `<strong>Recommended Question:</strong> ${rec.goal}`);
+          appendImage(rec.chart);
+          appendMessage("bot", `<strong>Explanation:</strong> ${rec.explanation}`);
+        });
+      });
+
+      scrollToBottom();
+    }
+  </script>
 </body>
 </html>

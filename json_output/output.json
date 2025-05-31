@@ -1,127 +1,58 @@
 [
   {
-    "month": 852069600000,
-    "country": "Canada",
-    "total_revenue": 12855.6100789616
+    "Category": "Grains/Cereals",
+    "Total Sold 1997": 56871.8248449776,
+    "Total Sold 1996": 9507.9200277317,
+    "Difference": 47363.904817246,
+    "Percent Change": 498.15
   },
   {
-    "month": 852069600000,
-    "country": "Denmark",
-    "total_revenue": 11188.4001398087
+    "Category": "Produce",
+    "Total Sold 1997": 54940.7673931735,
+    "Total Sold 1996": 13885.7804231864,
+    "Difference": 41054.9869699871,
+    "Percent Change": 295.66
   },
   {
-    "month": 852069600000,
-    "country": "Austria",
-    "total_revenue": 9118.71488123
+    "Category": "Seafood",
+    "Total Sold 1997": 66959.2169491353,
+    "Total Sold 1996": 19391.2250086725,
+    "Difference": 47567.9919404629,
+    "Percent Change": 245.31
   },
   {
-    "month": 852069600000,
-    "country": "Brazil",
-    "total_revenue": 5977.7200156356
+    "Category": "Condiments",
+    "Total Sold 1997": 55368.5896584005,
+    "Total Sold 1996": 17900.3847338242,
+    "Difference": 37468.2049245763,
+    "Percent Change": 209.32
   },
   {
-    "month": 852069600000,
-    "country": "USA",
-    "total_revenue": 4456.0000190735
+    "Category": "Dairy Products",
+    "Total Sold 1997": 115387.639674628,
+    "Total Sold 1996": 40980.4500342458,
+    "Difference": 74407.1896403822,
+    "Percent Change": 181.57
   },
   {
-    "month": 852069600000,
-    "country": "France",
-    "total_revenue": 4105.6000928879
+    "Category": "Meat/Poultry",
+    "Total Sold 1997": 80975.1082099665,
+    "Total Sold 1996": 28813.6604672337,
+    "Difference": 52161.4477427329,
+    "Percent Change": 181.03
   },
   {
-    "month": 852069600000,
-    "country": "UK",
-    "total_revenue": 3062.9999866486
+    "Category": "Confections",
+    "Total Sold 1997": 82657.7505874512,
+    "Total Sold 1996": 29685.5504782729,
+    "Difference": 52972.2001091783,
+    "Percent Change": 178.44
   },
   {
-    "month": 852069600000,
-    "country": "Germany",
-    "total_revenue": 3008.7999482155
-  },
-  {
-    "month": 852069600000,
-    "country": "Switzerland",
-    "total_revenue": 2097.6000273466
-  },
-  {
-    "month": 852069600000,
-    "country": "Italy",
-    "total_revenue": 1833.0499874987
-  },
-  {
-    "month": 852069600000,
-    "country": "Ireland",
-    "total_revenue": 1441.3749599457
-  },
-  {
-    "month": 852069600000,
-    "country": "Finland",
-    "total_revenue": 1054.8000253856
-  },
-  {
-    "month": 852069600000,
-    "country": "Venezuela",
-    "total_revenue": 400.0
-  },
-  {
-    "month": 852069600000,
-    "country": "Spain",
-    "total_revenue": 338.2000007629
-  },
-  {
-    "month": 852069600000,
-    "country": "Argentina",
-    "total_revenue": 319.2000045776
-  },
-  {
-    "month": 854748000000,
-    "country": "USA",
-    "total_revenue": 8697.6348293611
-  },
-  {
-    "month": 854748000000,
-    "country": "Germany",
-    "total_revenue": 6691.5000467926
-  },
-  {
-    "month": 854748000000,
-    "country": "France",
-    "total_revenue": 6248.2399906313
-  },
-  {
-    "month": 854748000000,
-    "country": "Belgium",
-    "total_revenue": 3891.0000514984
-  },
-  {
-    "month": 854748000000,
-    "country": "Finland",
-    "total_revenue": 3077.0000457764
-  },
-  {
-    "month": 854748000000,
-    "country": "Austria",
-    "total_revenue": 1792.0000076294
-  },
-  {
-    "month": 854748000000,
-    "country": "Sweden",
-    "total_revenue": 1703.819979744
-  },
-  {
-    "month": 854748000000,
-    "country": "Venezuela",
-    "total_revenue": 1538.700050354
-  },
-  {
-    "month": 854748000000,
-    "country": "Canada",
-    "total_revenue": 1077.9999904633
-  },
-  {
-    "month": 854748000000,
-    "country": "UK",
-    "total_revenue": 1039.299978058
+    "Category": "Beverages",
+    "Total Sold 1997": 103924.3050749679,
+    "Total Sold 1996": 47918.9998096556,
+    "Difference": 56005.3052653123,
+    "Percent Change": 116.87
   }
 ]
