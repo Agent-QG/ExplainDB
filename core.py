@@ -77,8 +77,16 @@ def process_query(
         print("Raw content:", search_result)
         exit(1)
 
+
     # Convert result to DataFrame and save to JSON for debugging or GPT use
     df = pd.DataFrame(search_result)
+
+    # 在 summarize 前先清洗 NaN 标准差列（避免 LIDA 内部报错）
+    for col in df.columns:
+        if pd.api.types.is_numeric_dtype(df[col]):
+            if df[col].std() != df[col].std():  # NaN 检查
+                df[col] = df[col].fillna(0)
+
     json_str = df.to_json(orient="records", force_ascii=False, indent=2)
     with open("json_output/output.json", "w", encoding="utf-8") as f:
         f.write(json_str)
