@@ -153,7 +153,7 @@ You can add more databases by editing the `DATABASES` variable in `app.py`:
 ```python
 DATABASES = {
     "Chinook": "sqlite:///Chinook.db",
-    "Northwind": "postgresql+psycopg2://user:password@localhost:5432/northwind",
+    "Northwind": "postgresql+psycopg2://user:password@localhost:your_host/northwind",
     "MyCustomDB": "sqlite:///path/to/your.db"
 }
 ```
