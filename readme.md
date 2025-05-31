@@ -80,7 +80,9 @@ ExplainDB consists of the following key modules working together to provide end-
 
 2. **Component Overview**
 
-Frontend (HTML + JavaScript): Provides the user interface for entering questions and viewing visualizations and explanations.
+**Frontend (HTML + JavaScript):**
+
+Provides the user interface for entering questions and viewing visualizations and explanations.
 
 **Flask Backend:**
 
