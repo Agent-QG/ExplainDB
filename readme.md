@@ -44,6 +44,7 @@ ExplainDB consists of the following key modules working together to provide end-
 
 1. **Architecture Diagram**
 
+```
 [ User Browser ]
        |
        v
@@ -75,6 +76,7 @@ ExplainDB consists of the following key modules working together to provide end-
        |
        v
 [ Final Output: Answer + Charts + Explanations ]
+```
 
 2. **Component Overview**
 
