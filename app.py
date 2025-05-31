@@ -17,7 +17,7 @@ Session(app)
 # Databases
 DATABASES = {
     "Chinook": "sqlite:///Chinook.db",
-    "Northwind": "postgresql+psycopg2://postgres:226850@localhost:5433/northwind"
+    "Northwind": "postgresql+psycopg2://user:password@localhost:your_host/northwind",
 }
 
 @app.route("/")
