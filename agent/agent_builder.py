@@ -3,14 +3,14 @@ from langchain_community.utilities import SQLDatabase
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langgraph.prebuilt import create_react_agent
 
-def build_agent(db_uri="sqlite:///Chinook.db", llm_name="openai:gpt-4.1", top_k=25):
+def build_agent(db_uri, llm_name="openai:gpt-4.1", top_k=25):
     llm = init_chat_model(llm_name)
     db = SQLDatabase.from_uri(db_uri)
     toolkit = SQLDatabaseToolkit(db=db, llm=llm)
     tools = toolkit.get_tools()
 
     system_prompt = f"""
-    You are an agent designed to interact with a SQL database.
+    You are an agent designed to interact with a PostgreSQL database. 
     Given an input question, create a syntactically correct {db.dialect} query to run,
     then look at the results of the query and return the answer. Unless the user
     specifies a specific number of examples they wish to obtain, always limit your
@@ -35,4 +35,5 @@ def build_agent(db_uri="sqlite:///Chinook.db", llm_name="openai:gpt-4.1", top_k=
     """
 
     agent = create_react_agent(llm, tools, prompt=system_prompt)
+    print("sql agent is built!")
     return agent
