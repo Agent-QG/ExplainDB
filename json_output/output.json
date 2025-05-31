@@ -1,0 +1,127 @@
+[
+  {
+    "month": 852069600000,
+    "country": "Canada",
+    "total_revenue": 12855.6100789616
+  },
+  {
+    "month": 852069600000,
+    "country": "Denmark",
+    "total_revenue": 11188.4001398087
+  },
+  {
+    "month": 852069600000,
+    "country": "Austria",
+    "total_revenue": 9118.71488123
+  },
+  {
+    "month": 852069600000,
+    "country": "Brazil",
+    "total_revenue": 5977.7200156356
+  },
+  {
+    "month": 852069600000,
+    "country": "USA",
+    "total_revenue": 4456.0000190735
+  },
+  {
+    "month": 852069600000,
+    "country": "France",
+    "total_revenue": 4105.6000928879
+  },
+  {
+    "month": 852069600000,
+    "country": "UK",
+    "total_revenue": 3062.9999866486
+  },
+  {
+    "month": 852069600000,
+    "country": "Germany",
+    "total_revenue": 3008.7999482155
+  },
+  {
+    "month": 852069600000,
+    "country": "Switzerland",
+    "total_revenue": 2097.6000273466
+  },
+  {
+    "month": 852069600000,
+    "country": "Italy",
+    "total_revenue": 1833.0499874987
+  },
+  {
+    "month": 852069600000,
+    "country": "Ireland",
+    "total_revenue": 1441.3749599457
+  },
+  {
+    "month": 852069600000,
+    "country": "Finland",
+    "total_revenue": 1054.8000253856
+  },
+  {
+    "month": 852069600000,
+    "country": "Venezuela",
+    "total_revenue": 400.0
+  },
+  {
+    "month": 852069600000,
+    "country": "Spain",
+    "total_revenue": 338.2000007629
+  },
+  {
+    "month": 852069600000,
+    "country": "Argentina",
+    "total_revenue": 319.2000045776
+  },
+  {
+    "month": 854748000000,
+    "country": "USA",
+    "total_revenue": 8697.6348293611
+  },
+  {
+    "month": 854748000000,
+    "country": "Germany",
+    "total_revenue": 6691.5000467926
+  },
+  {
+    "month": 854748000000,
+    "country": "France",
+    "total_revenue": 6248.2399906313
+  },
+  {
+    "month": 854748000000,
+    "country": "Belgium",
+    "total_revenue": 3891.0000514984
+  },
+  {
+    "month": 854748000000,
+    "country": "Finland",
+    "total_revenue": 3077.0000457764
+  },
+  {
+    "month": 854748000000,
+    "country": "Austria",
+    "total_revenue": 1792.0000076294
+  },
+  {
+    "month": 854748000000,
+    "country": "Sweden",
+    "total_revenue": 1703.819979744
+  },
+  {
+    "month": 854748000000,
+    "country": "Venezuela",
+    "total_revenue": 1538.700050354
+  },
+  {
+    "month": 854748000000,
+    "country": "Canada",
+    "total_revenue": 1077.9999904633
+  },
+  {
+    "month": 854748000000,
+    "country": "UK",
+    "total_revenue": 1039.299978058
+  }
+]

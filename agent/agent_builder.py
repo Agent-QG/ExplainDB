@@ -32,6 +32,8 @@ def build_agent(db_uri, llm_name="openai:gpt-4.1", top_k=25):
     Then you should query the schema of the most relevant tables.
     
     After getting the query results, always show **all rows** from the result up to the limit of {top_k}. Do not summarize or omit rows unless explicitly instructed.
+    
+    Output your answer in human natural language in an easy and readable way.
     """
 
     agent = create_react_agent(llm, tools, prompt=system_prompt)
