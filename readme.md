@@ -15,6 +15,7 @@ ExplainDB combines natural language processing, database querying, and data visu
 7. **Support multi-turn conversations and session history to allow follow-up questions and reviews**
 
 This platform provides an intuitive, all-in-one data exploration experience for users who may not be familiar with SQL or data visualization tools.
+
 Refer to `ExplainDB - Example.html` for an example of input and output.
 
 ## Project Structure
