@@ -18,6 +18,8 @@ This platform provides an intuitive, all-in-one data exploration experience for 
 
 Refer to `ExplainDB - Example.html` for an example of input and output.
 
+## YouTube Link: https://www.youtube.com/watch?v=1gJaZMguamM
+
 ## Project Structure
 
 ```
